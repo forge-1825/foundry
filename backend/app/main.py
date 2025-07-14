@@ -432,7 +432,7 @@ async def run_script(script_id: str, parameters: Dict[str, Any]) -> None:
     if script_id == "content_extraction_enrichment" and False:  # Skip this block since we're using the batch file
         # This is a special case that combines manual_extractor and data_enrichment
         # First, execute manual_extractor
-        extraction_cmd = ["python", os.path.join(SCRIPTS_DIR, "manual_extractor.py")]
+        extraction_cmd = ["python3", os.path.join(SCRIPTS_DIR, "manual_extractor.py")]
 
         # Handle URL parameter
         if "url" in parameters and parameters["url"]:
@@ -508,7 +508,7 @@ async def run_script(script_id: str, parameters: Dict[str, Any]) -> None:
         # If enrichment is enabled, execute data_enrichment
         if "enable_enrichment" in parameters and parameters["enable_enrichment"]:
             # Prepare enrichment command
-            enrichment_cmd = ["python", os.path.join(SCRIPTS_DIR, "data_enrichment_enhanced_gpu_fixed_v2.py")]
+            enrichment_cmd = ["python3", os.path.join(SCRIPTS_DIR, "data_enrichment_enhanced_gpu_fixed_v2.py")]
 
             # Handle input file parameter
             if "input_file" in parameters and parameters["input_file"]:
