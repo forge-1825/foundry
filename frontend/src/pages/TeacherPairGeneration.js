@@ -12,6 +12,7 @@ import { useScript } from '../contexts/ScriptContext';
 import { useSystem } from '../contexts/SystemContext';
 import { scriptService } from '../services/scriptService';
 import PipelineNavigation from '../components/PipelineNavigation';
+import ModelAvailabilityStatus from '../components/ModelAvailabilityStatus';
 
 const TeacherPairGeneration = () => {
   const navigate = useNavigate();
@@ -169,6 +170,23 @@ const TeacherPairGeneration = () => {
     <div className="p-6">
       {/* Pipeline Navigation */}
       <PipelineNavigation />
+
+      {/* Model Availability Status */}
+      <div className="mb-4">
+        <ModelAvailabilityStatus 
+          onRefresh={async () => {
+            // Refresh available models
+            const containers = await scriptService.getDockerContainers();
+            const teacherModels = containers.filter(container =>
+              container.status === 'running' &&
+              (container.name.toLowerCase().includes('phi') ||
+               container.name.toLowerCase().includes('teacher') ||
+               container.type?.toLowerCase().includes('teacher'))
+            );
+            setAvailableModels(teacherModels);
+          }}
+        />
+      </div>
 
       <div className="bg-white rounded-lg shadow-card p-6">
         <div className="flex justify-between items-center mb-6">

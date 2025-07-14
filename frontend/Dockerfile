@@ -22,8 +22,7 @@ COPY --from=build /app/build /usr/share/nginx/html
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy .env file and env.sh script
-COPY .env /usr/share/nginx/html/.env
+# Copy env.sh script
 COPY env.sh /usr/share/nginx/html/env.sh
 
 # Make env.sh executable

@@ -294,12 +294,40 @@ async def start_pipeline(request: ProcessRequest):
 
     # Check server requirements
     if step.get('requires_server'):
+        missing_servers = []
+        server_details = []
+        
         for server in step['requires_server']:
             if not check_server_running(server):
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Required server {server} is not running"
-                )
+                missing_servers.append(server)
+                port = SERVER_CONFIG.get(server, {}).get('port', 'unknown')
+                server_details.append(f"{server} (port {port})")
+        
+        if missing_servers:
+            # Import the detection function
+            import sys
+            sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            from app.vllm_client import detect_all_vllm_servers
+            
+            # Detect available servers
+            available_servers = detect_all_vllm_servers()
+            available_info = []
+            for srv in available_servers:
+                if srv['status'] == 'active':
+                    available_info.append(f"{srv['name']} on port {srv['port']} ({srv['type']})")
+            
+            error_msg = f"Required model server(s) not running: {', '.join(server_details)}. "
+            
+            if available_info:
+                error_msg += f"Available servers: {', '.join(available_info)}. "
+                error_msg += "Please update your configuration to use an available server."
+            else:
+                error_msg += "No vLLM servers detected. Please start Docker containers or set up SSH port forwarding."
+            
+            raise HTTPException(
+                status_code=400,
+                detail=error_msg
+            )
 
     # Special handling for content_extraction_enrichment step
     if step_id == 'content_extraction_enrichment':

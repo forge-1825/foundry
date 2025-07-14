@@ -1,0 +1,15 @@
+# This override file is automatically loaded by docker-compose
+# It applies GPU configuration based on the USE_REMOTE_MODELS setting
+
+# To use local GPU (when USE_REMOTE_MODELS=false and ENABLE_GPU=1):
+# Uncomment the following section or use: docker-compose -f docker-compose.yml -f docker-compose.gpu.yml up
+
+# services:
+#   backend:
+#     deploy:
+#       resources:
+#         reservations:
+#           devices:
+#             - driver: nvidia
+#               count: 1
+#               capabilities: [gpu]

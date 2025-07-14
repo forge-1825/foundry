@@ -12,10 +12,36 @@ from typing import Dict, Any, Optional, List
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Detect if running in Docker container
+def is_running_in_docker():
+    """Check if the code is running inside a Docker container"""
+    return os.path.exists('/.dockerenv') or os.environ.get('DOCKER_CONTAINER') == '1'
+
+# Get the appropriate host for accessing services from container
+def get_host():
+    """Get the appropriate hostname for accessing host services"""
+    # Check if we should use remote models (SSH forwarded) or local Docker models
+    use_remote_models = os.environ.get('USE_REMOTE_MODELS', 'True').lower() == 'true'
+    
+    if use_remote_models and is_running_in_docker():
+        # Remote models accessed via SSH port forwarding from host
+        return 'host.docker.internal'
+    elif use_remote_models:
+        # Remote models accessed directly (not in container)
+        return 'localhost'
+    else:
+        # Local Docker models - use localhost even from container
+        # since they would be in the same Docker network
+        return 'localhost'
+
+# Default host for vLLM connections
+VLLM_HOST = get_host()
+logger.info(f"Using VLLM_HOST: {VLLM_HOST} (USE_REMOTE_MODELS={os.environ.get('USE_REMOTE_MODELS', 'True')})")
+
 class VLLMClient:
     """Client for interacting with vLLM servers using OpenAI-compatible API"""
     
-    def __init__(self, base_url: str = "http://localhost:8002/v1", api_key: str = "dummy-key"):
+    def __init__(self, base_url: str = None, api_key: str = "dummy-key"):
         """
         Initialize the vLLM client.
         
@@ -23,6 +49,8 @@ class VLLMClient:
             base_url: Base URL for the vLLM server
             api_key: API key (not used by vLLM, but required for OpenAI compatibility)
         """
+        if base_url is None:
+            base_url = f"http://{VLLM_HOST}:8002/v1"
         self.base_url = base_url
         self.api_key = api_key
         self.headers = {
@@ -87,7 +115,7 @@ def get_vllm_client_for_port(port: int) -> VLLMClient:
     Returns:
         A vLLM client
     """
-    base_url = f"http://localhost:{port}/v1"
+    base_url = f"http://{VLLM_HOST}:{port}/v1"
     return VLLMClient(base_url=base_url)
 
 def get_docker_container_ports() -> Dict[str, int]:
@@ -98,6 +126,7 @@ def get_docker_container_ports() -> Dict[str, int]:
         Dictionary mapping container names to ports
     """
     import subprocess
+    import re
     
     try:
         # Get list of running containers with port mappings
@@ -117,24 +146,97 @@ def get_docker_container_ports() -> Dict[str, int]:
                 
             name, ports_str = parts
             
-            # Look for port mappings like 0.0.0.0:8002->80/tcp
-            if '8000->80' in ports_str:
-                container_ports[name] = 8000
-            elif '8001->80' in ports_str:
-                container_ports[name] = 8001
-            elif '8002->80' in ports_str:
-                container_ports[name] = 8002
-            elif '->80' in ports_str:
-                # Extract the port number
-                import re
-                match = re.search(r':(\d+)->80', ports_str)
+            # More flexible port mapping detection
+            # Look for patterns like:
+            # - 0.0.0.0:8000->8000/tcp
+            # - 0.0.0.0:8001->80/tcp
+            # - :::8002->8000/tcp
+            # - 8003/tcp
+            
+            # Try to find any port mapping
+            port_patterns = [
+                r':(\d+)->8000',  # Maps to vLLM default port
+                r':(\d+)->80',     # Maps to HTTP port
+                r':(\d+)->(\d+)',  # Any port mapping
+                r'^(\d+)/tcp',     # Direct port exposure
+            ]
+            
+            for pattern in port_patterns:
+                match = re.search(pattern, ports_str)
                 if match:
-                    container_ports[name] = int(match.group(1))
+                    port = int(match.group(1))
+                    # Only consider typical vLLM ports or ports in common range
+                    if 8000 <= port <= 8100 or port in [80, 443]:
+                        container_ports[name] = port
+                        logger.info(f"Found container {name} on port {port}")
+                        break
         
         return container_ports
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Docker command failed: {e}")
+        return {}
     except Exception as e:
         logger.error(f"Error getting Docker container ports: {e}")
         return {}
+
+def detect_all_vllm_servers(check_ssh_ports: bool = True) -> List[Dict[str, any]]:
+    """
+    Detect all available vLLM servers including Docker containers and SSH-forwarded ports.
+    
+    Args:
+        check_ssh_ports: Whether to check common SSH-forwarded ports
+        
+    Returns:
+        List of available servers with their details
+    """
+    servers = []
+    
+    # Get Docker container ports
+    container_ports = get_docker_container_ports()
+    for name, port in container_ports.items():
+        servers.append({
+            'name': name,
+            'port': port,
+            'type': 'docker',
+            'source_type': 'docker',  # Keep track of original source
+            'status': 'unknown'
+        })
+    
+    # Check common SSH-forwarded ports if requested
+    if check_ssh_ports:
+        ssh_ports = [8000, 8001, 8002, 8003, 8004, 8005]
+        for port in ssh_ports:
+            # Skip if already detected via Docker
+            if port not in container_ports.values():
+                # Test if port is responding
+                try:
+                    client = VLLMClient(base_url=f"http://{VLLM_HOST}:{port}/v1")
+                    models = client.get_available_models()
+                    if models:
+                        servers.append({
+                            'name': f'ssh_forwarded_port_{port}',
+                            'port': port,
+                            'type': 'ssh',
+                            'source_type': 'ssh',  # Keep track of original source
+                            'status': 'active',
+                            'models': models
+                        })
+                except Exception:
+                    # Port not responding or not a vLLM server
+                    pass
+    
+    # Test each server's status
+    for server in servers:
+        if server['status'] == 'unknown':
+            try:
+                client = VLLMClient(base_url=f"http://{VLLM_HOST}:{server['port']}/v1")
+                models = client.get_available_models()
+                server['status'] = 'active' if models else 'inactive'
+                server['models'] = models
+            except Exception:
+                server['status'] = 'inactive'
+    
+    return servers
 
 def query_vllm_model(port: int, prompt: str, model: str = "/model", 
                     max_tokens: int = 500, temperature: float = 0.7) -> str:

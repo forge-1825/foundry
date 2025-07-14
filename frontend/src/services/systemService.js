@@ -15,8 +15,28 @@ export const systemService = {
   // Get available Docker containers directly using vLLM API
   getDockerContainers: async () => {
     try {
+      // First try to get containers from backend API
+      try {
+        const backendContainers = await api.get('/api/docker/containers');
+        if (backendContainers && backendContainers.length > 0) {
+          console.log('Got containers from backend:', backendContainers);
+          // Transform the backend data to match the expected format
+          return backendContainers.map(container => ({
+            name: container.Name || container.Names || 'Unknown',
+            image: container.Image || 'Unknown',
+            status: container.State === 'running' ? 'running' : 'stopped',
+            type: container.Type || 'Unknown',
+            port: container.Port || (container.Ports && container.Ports[0] ? container.Ports[0].PublicPort : null),
+            id: container.ID || container.Id
+          }));
+        }
+      } catch (backendError) {
+        console.warn('Error fetching Docker containers from backend:', backendError);
+      }
+
+      // If backend fails, try direct vLLM API detection
       const containers = [];
-      const portsToCheck = [8000, 8001, 8002]; // Standard ports for vLLM models
+      const portsToCheck = [8000, 8001, 8002, 8003]; // Standard ports for vLLM models
 
       // Try to get models directly from vLLM API on each port
       for (const port of portsToCheck) {
@@ -26,20 +46,20 @@ export const systemService = {
           const data = await response.json();
 
           if (data && data.data && data.data.length > 0) {
-            // Determine container name and type based on port
-            let containerName = "unknown_vllm";
-            let containerType = "Unknown Model";
+            // Use model names from the API if available
+            const modelIds = data.data.map(model => model.id);
+            let containerName = modelIds.length > 0 ? modelIds[0] : `vllm_model_${port}`;
+            let containerType = "Model";
             let containerImage = "vllm/vllm-openai";
 
             if (port === 8000) {
-              containerName = "llama3_teacher_vllm";
               containerType = "Teacher Model";
             } else if (port === 8001) {
-              containerName = "whiterabbitneo_vllm";
-              containerType = "Teacher Model (WhiteRabbitNeo)";
-            } else if (port === 8002) {
-              containerName = "phi3_vllm";
               containerType = "Student Model";
+            } else if (port === 8002) {
+              containerType = "Student Model";
+            } else if (port === 8003) {
+              containerType = "Distilled Model";
             }
 
             // Add container info
@@ -49,10 +69,10 @@ export const systemService = {
               status: "running",
               type: containerType,
               port: port,
-              models: data.data.map(model => model.id)
+              models: modelIds
             });
 
-            console.log(`Found vLLM container on port ${port}`);
+            console.log(`Found vLLM container on port ${port} with models:`, modelIds);
           }
         } catch (error) {
           console.warn(`No vLLM API found on port ${port}:`, error.message);
@@ -61,38 +81,13 @@ export const systemService = {
 
       // If containers were found, return them
       if (containers.length > 0) {
-        console.log('Found vLLM containers:', containers);
+        console.log('Found vLLM containers via direct detection:', containers);
         return containers;
       }
 
-      // Try to get containers from backend API as fallback
-      try {
-        const backendContainers = await api.get('/api/docker/containers');
-        if (backendContainers && backendContainers.length > 0) {
-          return backendContainers;
-        }
-      } catch (backendError) {
-        console.warn('Error fetching Docker containers from backend:', backendError);
-      }
-
-      // Fallback to hardcoded containers based on docker ps output
-      console.log('Using fallback hardcoded containers');
-      return [
-        {
-          name: "llama3_teacher_vllm",
-          image: "vllm/vllm-openai:latest",
-          status: "running",
-          type: "Teacher Model",
-          port: 8000
-        },
-        {
-          name: "phi3_vllm",
-          image: "vllm/vllm-openai",
-          status: "running",
-          type: "Student Model",
-          port: 8002
-        }
-      ];
+      // No containers found
+      console.log('No Docker containers found');
+      return [];
     } catch (error) {
       console.error('Error fetching Docker containers:', error);
       throw error;
