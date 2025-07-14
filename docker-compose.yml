@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   frontend:
     build:
@@ -35,17 +33,10 @@ services:
       - SCRIPTS_DIR=/scripts
       - DATA_DIR=/data
       - LOG_LEVEL=DEBUG
-      - ENABLE_GPU=1
+      - ENABLE_GPU=${ENABLE_GPU:-0}
     networks:
       - app-network
     restart: unless-stopped
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
 
 volumes:
   frontend_node_modules:

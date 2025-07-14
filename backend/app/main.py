@@ -17,10 +17,10 @@ from pathlib import Path
 from app.watchdog import ProcessWatchdog, run_watchdog_service
 
 # Import routes
-from routes.evaluation_routes import evaluation_bp
+# from routes.evaluation_routes import evaluation_bp  # Flask blueprint - needs conversion
 from routes.pipeline_routes import pipeline_bp
 from routes.docker_routes import docker_bp
-from routes.system_routes import system_bp
+# from routes.system_routes import system_bp  # Flask blueprint - needs conversion
 from routes.file_routes import file_bp
 
 # Configure logging
@@ -43,10 +43,10 @@ app.add_middleware(
 )
 
 # Register blueprints
-app.include_router(evaluation_bp)
+# app.include_router(evaluation_bp)  # Commented - Flask blueprint
 app.include_router(pipeline_bp)
 app.include_router(docker_bp)
-app.include_router(system_bp)
+# app.include_router(system_bp)  # Commented - Flask blueprint
 app.include_router(file_bp)
 
 # Add a root endpoint for testing
@@ -58,6 +58,34 @@ async def root():
 SCRIPTS_DIR = os.environ.get("SCRIPTS_DIR", "/scripts")
 DATA_DIR = os.environ.get("DATA_DIR", "/data")
 ENABLE_GPU = os.environ.get("ENABLE_GPU", "1") == "1"
+
+# Model Configuration from Environment
+MODEL_CONFIG = {
+    'teacher': {
+        'name': os.environ.get("TEACHER_MODEL_NAME", "Teacher"),
+        'port': int(os.environ.get("TEACHER_MODEL_PORT", "8000")),
+        'host': os.environ.get("TEACHER_MODEL_HOST", "localhost"),
+        'id': os.environ.get("TEACHER_MODEL_ID", "microsoft/Phi-3-mini-4k-instruct-AWQ"),
+        'path': os.environ.get("TEACHER_MODEL_PATH", "/models/teacher"),
+        'remote': os.environ.get("TEACHER_MODEL_REMOTE", "True").lower() == "true"
+    },
+    'student': {
+        'name': os.environ.get("STUDENT_MODEL_NAME", "Student"),
+        'port': int(os.environ.get("STUDENT_MODEL_PORT", "8001")),
+        'host': os.environ.get("STUDENT_MODEL_HOST", "localhost"),
+        'id': os.environ.get("STUDENT_MODEL_ID", "microsoft/Phi-3-mini-4k-instruct-AWQ"),
+        'path': os.environ.get("STUDENT_MODEL_PATH", "/models/student"),
+        'remote': os.environ.get("STUDENT_MODEL_REMOTE", "True").lower() == "true"
+    },
+    'distilled': {
+        'name': os.environ.get("DISTILLED_MODEL_NAME", "Distilled"),
+        'port': int(os.environ.get("DISTILLED_MODEL_PORT", "8003")),
+        'host': os.environ.get("DISTILLED_MODEL_HOST", "localhost"),
+        'id': os.environ.get("DISTILLED_MODEL_ID", "microsoft/Phi-3-mini-4k-instruct-AWQ"),
+        'path': os.environ.get("DISTILLED_MODEL_PATH", "/models/distilled"),
+        'remote': os.environ.get("DISTILLED_MODEL_REMOTE", "True").lower() == "true"
+    }
+}
 
 # Active processes dictionary
 active_processes: Dict[str, subprocess.Popen] = {}
@@ -107,8 +135,8 @@ def get_script_path(script_id: str) -> str:
     script_mapping = {
         "manual_extractor": "manual_extractor.py",
         "data_enrichment": "data_enrichment_enhanced_gpu_fixed_v2.py",
-        "content_extraction_enrichment": "run_data_enrichment.bat",
-        "teacher_pair_generation": "teacher_pair_generation_vllm_hierarchical.py",
+        "content_extraction_enrichment": "data_enrichment_enhanced_gpu_fixed_v2.py",
+        "teacher_pair_generation": "teacher_pair_generation_vllm_ssh.py",
         "distillation": "distillation_vllm_faster_improved.py",
         "student_self_study": "student_self_study_enhanced.py",
         "merge_model": "merge_model.py",
@@ -320,8 +348,8 @@ async def run_script(script_id: str, parameters: Dict[str, Any]) -> None:
 
     # Prepare command with parameters
     if script_id == "content_extraction_enrichment":
-        # For the batch file, we need to use cmd /c to run it
-        cmd = ["cmd", "/c", script_path]
+        # Run the Python script directly
+        cmd = ["python3", script_path]
 
         # Add parameters for the batch file
         # URL parameter
@@ -695,9 +723,26 @@ async def run_script(script_id: str, parameters: Dict[str, Any]) -> None:
                 output_file = output_file.replace('\\', '\\\\')
             cmd.append(f"--output-file={output_file}")
 
-        # Handle teacher model parameter
+        # Handle teacher model parameter - now maps to port
         if "teacher_model" in parameters and parameters["teacher_model"]:
-            cmd.append(f"--teacher-model={parameters['teacher_model']}")
+            # Check if teacher_model is a container name or port
+            teacher_model = parameters["teacher_model"]
+            
+            # Try to resolve container name to port
+            container_ports = get_docker_container_ports()
+            if teacher_model in container_ports:
+                port = container_ports[teacher_model]
+                cmd.append(f"--port={port}")
+            elif teacher_model.isdigit():
+                # Direct port number
+                cmd.append(f"--port={teacher_model}")
+            else:
+                # Let the script handle it
+                cmd.append(f"--port=8000")  # Default port
+        
+        # Add max pairs parameter if specified
+        if "max_pairs" in parameters:
+            cmd.append(f"--max-pairs={parameters['max_pairs']}")
     else:
         # Default parameter handling for other scripts
         for key, value in parameters.items():
@@ -950,25 +995,25 @@ async def list_docker_containers():
 
                         if name in container_ports:
                             port = container_ports[name]
-
-                            if port == 8000:
-                                container_type = "Teacher Model (Phi-4)"
-                            elif port == 8001:
-                                container_type = "Teacher Model (WhiteRabbitNeo)"
-                            elif port == 8002:
-                                container_type = "Student Model (Phi-3)"
+                            
+                            # Check against configured model ports
+                            for model_type, config in MODEL_CONFIG.items():
+                                if port == config['port']:
+                                    container_type = f"{config['name']} Model"
+                                    break
+                            
+                            # If not found in config, use generic naming
+                            if container_type == "Unknown":
+                                if port == 8000:
+                                    container_type = "Model on port 8000"
+                                elif port == 8001:
+                                    container_type = "Model on port 8001"
+                                elif port == 8002:
+                                    container_type = "Model on port 8002"
 
                         # Determine model type from name if not already set
                         if container_type == "Unknown":
-                            if "phi4" in name.lower() or "phi-4" in name.lower():
-                                container_type = "Teacher Model (Phi-4)"
-                            elif "phi3" in name.lower() or "phi-3" in name.lower():
-                                container_type = "Student Model (Phi-3)"
-                            elif "phi2" in name.lower() or "phi-2" in name.lower():
-                                container_type = "Student Model (Phi-2)"
-                            elif "whiterabbit" in name.lower() or "rabbit" in name.lower():
-                                container_type = "Teacher Model (WhiteRabbitNeo)"
-                            elif "teacher" in name.lower():
+                            if "teacher" in name.lower():
                                 container_type = "Teacher Model"
                             elif "student" in name.lower():
                                 container_type = "Student Model"
@@ -1072,6 +1117,96 @@ async def list_docker_containers():
         logger.error(f"Error listing Docker containers: {e}")
         raise HTTPException(status_code=500, detail=f"Error listing Docker containers: {str(e)}")
 
+# Model availability check endpoint
+@app.get("/api/models/check-availability")
+async def check_model_availability():
+    """Check availability of all model servers and provide diagnostic information"""
+    from .vllm_client import detect_all_vllm_servers
+    
+    try:
+        # Detect all available servers
+        servers = detect_all_vllm_servers(check_ssh_ports=True)
+        
+        # Process servers to add better display names and types based on environment configuration
+        for server in servers:
+            port = server.get('port', 0)
+            
+            # Check against configured model ports
+            model_found = False
+            for model_type, config in MODEL_CONFIG.items():
+                if port == config['port']:
+                    server['name'] = f"{config['name']} Model"
+                    server['type'] = f"{config['name']} Model"
+                    server['model_id'] = config['id']
+                    server['configured_as'] = model_type
+                    model_found = True
+                    break
+            
+            # If not found in configuration, use generic naming
+            if not model_found:
+                container_name = server['name'].lower()
+                if 'teacher' in container_name:
+                    server['type'] = 'Teacher Model'
+                elif 'student' in container_name:
+                    server['type'] = 'Student Model'
+                else:
+                    server['type'] = f'Model on port {port}'
+        
+        # Categorize servers
+        docker_servers = [s for s in servers if s.get('source_type') == 'docker']
+        ssh_servers = [s for s in servers if s.get('source_type') == 'ssh']
+        active_servers = [s for s in servers if s['status'] == 'active']
+        
+        # Create diagnostic response
+        response = {
+            'summary': {
+                'total_servers': len(servers),
+                'active_servers': len(active_servers),
+                'docker_containers': len(docker_servers),
+                'ssh_forwarded': len(ssh_servers)
+            },
+            'servers': servers,
+            'recommendations': [],
+            'model_config': MODEL_CONFIG  # Include configuration for debugging
+        }
+        
+        # Add recommendations based on findings
+        if len(active_servers) == 0:
+            response['recommendations'].append({
+                'type': 'error',
+                'message': 'No active vLLM servers found. Please start Docker containers or set up SSH port forwarding.'
+            })
+        elif len(active_servers) < 2:
+            response['recommendations'].append({
+                'type': 'warning',
+                'message': f'Only {len(active_servers)} server(s) active. Consider starting more for teacher/student model pairs.'
+            })
+        
+        # Check for configured models
+        teacher_port = MODEL_CONFIG['teacher']['port']
+        student_port = MODEL_CONFIG['student']['port']
+        
+        teacher_found = any(s['port'] == teacher_port and s['status'] == 'active' for s in servers)
+        student_found = any(s['port'] == student_port and s['status'] == 'active' for s in servers)
+        
+        if not teacher_found:
+            response['recommendations'].append({
+                'type': 'warning',
+                'message': f'Teacher model not found on configured port {teacher_port}. Check your environment configuration.'
+            })
+        
+        if not student_found:
+            response['recommendations'].append({
+                'type': 'info',
+                'message': f'Student model not found on configured port {student_port}. This is normal if not training.'
+            })
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error checking model availability: {e}")
+        raise HTTPException(status_code=500, detail=f"Error checking model availability: {str(e)}")
+
 # vLLM Models Endpoint
 @app.get("/api/vllm/models")
 async def list_vllm_models():
@@ -1099,14 +1234,12 @@ async def list_vllm_models():
                 client = get_vllm_client_for_port(port)
                 available_models = client.get_available_models()
 
-                # Determine model type based on port
+                # Determine model type based on configured ports
                 model_type = "Unknown"
-                if port == 8000:
-                    model_type = "Teacher Model (Phi-4)"
-                elif port == 8001:
-                    model_type = "Teacher Model (WhiteRabbitNeo)"
-                elif port == 8002:
-                    model_type = "Student Model"
+                for mt, config in MODEL_CONFIG.items():
+                    if port == config['port']:
+                        model_type = f"{config['name']} Model"
+                        break
 
                 for model_data in available_models:
                     model_id = model_data.get("id", "Unknown")

@@ -31,21 +31,65 @@ async def get_docker_containers():
             if line:
                 try:
                     container = json.loads(line)
+                    
+                    # Extract container name (remove leading slash if present)
+                    container_name = container.get('Names', '')
+                    if container_name.startswith('/'):
+                        container_name = container_name[1:]
+                    
                     # Parse ports
                     ports = []
+                    port_number = None
                     if container.get('Ports'):
                         port_strings = container['Ports'].split(', ')
                         for port_str in port_strings:
                             if '->' in port_str:
-                                public_port, private_port = port_str.split('->')[0], port_str.split('->')[1]
-                                public_port = public_port.strip()
-                                private_port, port_type = private_port.split('/')[0].strip(), private_port.split('/')[1].strip()
-                                ports.append({
-                                    'PublicPort': int(public_port),
-                                    'PrivatePort': int(private_port),
-                                    'Type': port_type
-                                })
+                                public_part, private_part = port_str.split('->')
+                                public_part = public_part.strip()
+                                
+                                # Extract port number from public part (handles IP:port format)
+                                if ':' in public_part:
+                                    public_port = public_part.split(':')[-1]
+                                else:
+                                    public_port = public_part
+                                
+                                # Extract private port and type
+                                private_port, port_type = private_part.split('/')[0].strip(), private_part.split('/')[1].strip()
+                                
+                                try:
+                                    ports.append({
+                                        'PublicPort': int(public_port),
+                                        'PrivatePort': int(private_port),
+                                        'Type': port_type
+                                    })
+                                    # Store the first public port for easy access
+                                    if port_number is None:
+                                        port_number = int(public_port)
+                                except ValueError as e:
+                                    logger.warning(f"Could not parse port: {port_str} - {e}")
+                    
                     container['Ports'] = ports
+                    container['Name'] = container_name
+                    container['Port'] = port_number
+                    
+                    # Determine container type based on port or name
+                    container_type = "Unknown"
+                    if port_number == 8000:
+                        container_type = "Teacher Model"
+                    elif port_number == 8001:
+                        container_type = "Student Model"
+                    elif port_number == 8002:
+                        container_type = "Student Model"
+                    elif port_number == 8003:
+                        container_type = "Distilled Model"
+                    elif 'teacher' in container_name.lower():
+                        container_type = "Teacher Model"
+                    elif 'student' in container_name.lower():
+                        container_type = "Student Model"
+                    elif 'distilled' in container_name.lower():
+                        container_type = "Distilled Model"
+                    
+                    container['Type'] = container_type
                     containers.append(container)
                 except json.JSONDecodeError as e:
                     logger.error(f"Error parsing container JSON: {e}")

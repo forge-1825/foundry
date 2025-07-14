@@ -49,5 +49,20 @@ export const scriptService = {
   // Get history of script runs
   getRunHistory: async () => {
     return api.get('/api/runs/history');
+  },
+
+  // Check model availability
+  checkModelAvailability: async () => {
+    return api.get('/api/models/check-availability');
+  },
+
+  // Get Docker containers
+  getDockerContainers: async () => {
+    return api.get('/api/docker/containers');
+  },
+
+  // Get vLLM models
+  getVLLMModels: async () => {
+    return api.get('/api/vllm/models');
   }
 };

@@ -1,0 +1,13 @@
+# GPU-enabled configuration for local model execution
+# Use this when USE_REMOTE_MODELS=false and ENABLE_GPU=1
+# Run with: docker-compose -f docker-compose.yml -f docker-compose.gpu.yml up
+
+services:
+  backend:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
