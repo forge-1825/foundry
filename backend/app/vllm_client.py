@@ -41,17 +41,21 @@ logger.info(f"Using VLLM_HOST: {VLLM_HOST} (USE_REMOTE_MODELS={os.environ.get('U
 class VLLMClient:
     """Client for interacting with vLLM servers using OpenAI-compatible API"""
     
-    def __init__(self, base_url: str = None, api_key: str = "dummy-key"):
+    def __init__(self, base_url: str = None, api_key: str = None):
         """
         Initialize the vLLM client.
         
         Args:
             base_url: Base URL for the vLLM server
-            api_key: API key (not used by vLLM, but required for OpenAI compatibility)
+            api_key: API key (optional, defaults to environment variable VLLM_API_KEY or 'not-needed')
         """
         if base_url is None:
             base_url = f"http://{VLLM_HOST}:8002/v1"
         self.base_url = base_url
+        
+        # Use provided api_key, or fall back to environment variable, or default
+        if api_key is None:
+            api_key = os.environ.get('VLLM_API_KEY', 'not-needed')
         self.api_key = api_key
         self.headers = {
             "Content-Type": "application/json",
