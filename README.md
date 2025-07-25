@@ -2,7 +2,29 @@
 
 # Model Distillation Pipeline Web UI
 
-A web-based user interface for managing a model distillation pipeline. This application enables users to execute Python scripts in a logical sequence to perform AI model distillation tasks, from data extraction to model evaluation.
+<div align="center">
+
+![Forge1825](frontend/public/ForgeFoundry.png)
+
+[![License: MIT with Attribution](https://img.shields.io/badge/License-MIT%20with%20Attribution-yellow.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Node 18+](https://img.shields.io/badge/node-18+-green.svg)](https://nodejs.org/)
+[![Docker](https://img.shields.io/badge/docker-required-blue.svg)](https://www.docker.com/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
+**A powerful web-based platform for AI model distillation by Forge1825**
+
+[Features](#features) • [Quick Start](#quick-start) • [Documentation](#documentation) • [Contributing](#contributing)
+
+</div>
+
+---
+
+## 🚀 Overview
+
+Model Distillation Pipeline is a comprehensive web application that streamlines the process of distilling large language models into smaller, more efficient versions. Built with modern technologies and designed for ease of use, it provides an intuitive interface for managing the entire distillation workflow.
+
+**📢 BETA Notice**: This release provides the foundational infrastructure for model distillation. Full functionality requires additional setup of model containers and understanding of the distillation workflow. See [Current Status](#-current-status---beta) for details.
 
 ## Features
 
@@ -36,67 +58,55 @@ A web-based user interface for managing a model distillation pipeline. This appl
 - WebSockets for real-time logs and status updates
 - File system access for reading/writing data files
 
-## Getting Started
+## 🚀 Quick Start
+
+Get up and running in under 5 minutes!
 
 ### Prerequisites
 
-- Docker and Docker Compose
-- Node.js (for local development)
-- Python 3.10+ (for local development)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop) (includes Docker Compose)
+- 16GB RAM minimum (32GB recommended)
+- NVIDIA GPU (optional, for accelerated processing)
 
 ### Installation
 
-1. Install dependencies:
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/forge1825/model-distillation-pipeline.git
+   cd model-distillation-pipeline
+   ```
 
-```bash
-# Run the install_dependencies.bat script
-install_dependencies.bat
-```
+2. **Copy environment configuration**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration if needed
+   ```
 
-Or manually install dependencies:
+3. **Start the application**
+   ```bash
+   docker-compose up -d
+   ```
 
-```bash
-# Install backend dependencies
-cd backend
-pip install -r requirements.txt
-cd ..
+4. **Access the UI**
+   
+   Open your browser and navigate to: **http://localhost:3456**
 
-# Install frontend dependencies
-cd frontend
-npm install --legacy-peer-deps
-cd ..
-```
+That's it! 🎉 The application is now running.
 
-2. Set up environment variables:
+### Quick Test
 
-A `.env` file has already been created in the root directory with default values. You can modify it if needed:
+To verify the infrastructure is working:
+1. Navigate to the Dashboard
+2. Check that the UI loads correctly
+3. Explore the Script Configuration page
+4. Note: Full pipeline execution requires model containers (not included)
 
-```
-DATA_DIR=/path/to/your/data/directory
-```
+**⚠️ Important**: This release provides the infrastructure. To run actual model distillation:
+- You need to set up vLLM model containers separately
+- See the documentation for model requirements
+- Review script documentation to understand the workflow
 
-3. Build and start the Docker containers:
-
-```bash
-# Make sure you're in the model-distillation-ui directory
-
-# Start the containers
-docker-compose up --build
-```
-
-4. Alternatively, you can run the backend and frontend separately:
-
-```bash
-# Start the backend
-cd backend
-python -m uvicorn app.main:app --host 0.0.0.0 --port 7433 --reload
-
-# In another terminal, start the frontend
-cd frontend
-npm start
-```
-
-5. Access the web UI at http://localhost:3456
+For detailed setup instructions, see [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md)
 
 ### Development Setup
 
@@ -299,6 +309,54 @@ For more detailed information, see the following documentation:
 - [OpenEvals Technical Implementation](docs/OpenEvals_Technical_Implementation.md): Technical details on the implementation
 - [Model Evaluation Hub User Guide](docs/Model_Evaluation_Hub_User_Guide.md): Detailed guide on using the Model Evaluation Hub
 
-## License
+## 🔧 Current Status - BETA
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This is a **BETA release** (v0.1.0-beta) with the following status:
+
+### ✅ What's Working
+- Web UI with real-time monitoring via WebSockets
+- Docker containerization for easy deployment
+- Model interaction and query interface
+- Script execution framework with progress tracking
+- Basic results visualization components
+
+### ⚠️ Requires Setup
+- Full pipeline execution (requires external vLLM model containers)
+- Results visualization (requires execution data)
+- Model evaluation (depends on trained models)
+
+### 🚧 Known Limitations
+- Test suite is not yet implemented
+- Some error handling could be improved
+- Performance optimization needed for large datasets
+- Limited to specific model architectures (Llama 3, Phi-3)
+- Multiple script versions without clear documentation on which to use
+- No included model containers (must be set up separately)
+- Pipeline workflow documentation needs improvement
+
+### 🤝 Help Wanted
+We're actively seeking contributors for:
+- **Test Coverage** - Help us build a comprehensive test suite
+- **Documentation** - Improve user guides and API docs
+- **Performance** - Optimize pipeline execution
+- **Model Support** - Add support for more model architectures
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to help!
+
+## 📄 License
+
+This project is licensed under the MIT License with Attribution requirement - see the [LICENSE](LICENSE) file for details.
+
+**Important**: Any use of this software requires attribution to Forge1825.
+
+## 🏢 About Forge1825
+
+Model Distillation Pipeline is proudly developed and maintained by Forge1825, committed to advancing AI accessibility through efficient model optimization.
+
+---
+
+<div align="center">
+Made with ❤️ by Forge1825
+
+**[Website](https://forge1825.com)** • **[GitHub](https://github.com/forge1825)** • **[Contact](mailto:hello@forge1825.com)**
+</div>

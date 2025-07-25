@@ -22,9 +22,13 @@ logging.basicConfig(
 )
 
 # Configure OpenAI client to point to the locally running vLLM server
+# Get API key from environment variable if available
+vllm_api_key = os.environ.get('VLLM_API_KEY', 'not-needed')
+vllm_base_url = os.environ.get('VLLM_BASE_URL', 'http://localhost:8000/v1')
+
 client = OpenAI(
-    base_url="http://localhost:8000/v1",  # Make sure your teacher model container is accessible at this endpoint
-    api_key="not-needed"  # vLLM doesn't require an API key
+    base_url=vllm_base_url,  # Make sure your teacher model container is accessible at this endpoint
+    api_key=vllm_api_key  # vLLM doesn't require an API key but we use env var for flexibility
 )
 
 def check_vllm_server(max_retries=36, delay=10):

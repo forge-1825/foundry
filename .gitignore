@@ -1,9 +1,3 @@
-# Node.js dependencies
-node_modules/
-npm-debug.log
-yarn-debug.log
-yarn-error.log
-
 # Python
 __pycache__/
 *.py[cod]
@@ -11,6 +5,28 @@ __pycache__/
 *.so
 .Python
 env/
+venv/
+ENV/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+poetry.lock
+
+# Distribution / packaging
 build/
 develop-eggs/
 dist/
@@ -22,34 +38,155 @@ lib64/
 parts/
 sdist/
 var/
+wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
-# Docker
-.dockerignore
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.npm
 
-# IDE files
-.idea/
-.vscode/
-*.swp
-*.swo
-.DS_Store
-
-# Logs
-logs/
-*.log
+# React / Frontend
+frontend/build/
+frontend/coverage/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
 
 # Environment variables
 .env
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*.local
+*.env
+!.env.example
 
-# Build files
-frontend/build/
-frontend/dist/
+# IDE specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.sublime-project
 
-# Cache
-.cache/
+# OS specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Logs
+logs/
+*.log
+*.log.*
+.log/
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.swp
+*.swo
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Machine Learning / AI
+*.h5
+*.pkl
+*.pickle
+*.joblib
+*.model
+*.pth
+*.pt
+*.ckpt
+checkpoint/
+checkpoints/
+saved_models/
+models/
+weights/
+
+# Data files (be careful with sensitive data)
+data/raw/
+data/processed/
+data/interim/
+*.csv
+*.xlsx
+*.xls
+!package.json
+!package-lock.json
+!tsconfig.json
+!manifest.json
+
+# Output files
+output/
+outputs/
+results/
+reports/
+backend/Output/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# Security - Never commit these
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets/
+credentials/
+auth/
+
+# Testing
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+test-results/
+junit.xml
+
+# Misc
+.history
+.svn/
+CVS/
+
+# Project specific
+/backend/Output/extracted
+/backend/learning_log_*.json
+/backend/novelty_counts.json
+/backend/test_novelty_data.json
+/scripts/*.log
+/scripts/results/
+/scripts/outputs/
