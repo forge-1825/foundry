@@ -1,6 +1,6 @@
 
 
-# Model Distillation Pipeline Web UI
+# Foundry - Model Distillation Pipeline (BETA)
 
 <div align="center">
 
@@ -10,9 +10,9 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Node 18+](https://img.shields.io/badge/node-18+-green.svg)](https://nodejs.org/)
 [![Docker](https://img.shields.io/badge/docker-required-blue.svg)](https://www.docker.com/)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Status: BETA](https://img.shields.io/badge/Status-BETA-orange.svg)](BETA_RELEASE_NOTES.md)
 
-**A powerful web-based platform for AI model distillation by Forge1825**
+**A powerful web-based platform for AI model distillation**
 
 [Features](#features) • [Quick Start](#quick-start) • [Documentation](#documentation) • [Contributing](#contributing)
 
@@ -20,11 +20,24 @@
 
 ---
 
+## ⚠️ BETA Release Notice
+
+**Version**: 1.0.0-beta  
+**Status**: BETA - Not recommended for production use
+
+This is a BETA release intended for testing and feedback. Please review the [BETA Release Notes](BETA_RELEASE_NOTES.md) for known limitations and setup requirements.
+
 ## 🚀 Overview
 
-Model Distillation Pipeline is a comprehensive web application that streamlines the process of distilling large language models into smaller, more efficient versions. Built with modern technologies and designed for ease of use, it provides an intuitive interface for managing the entire distillation workflow.
+Foundry is a comprehensive web application that streamlines the process of distilling large language models into smaller, more efficient versions. Built with modern technologies and designed for ease of use, it provides an intuitive interface for managing the entire distillation workflow.
 
-**📢 BETA Notice**: This release provides the foundational infrastructure for model distillation. Full functionality requires additional setup of model containers and understanding of the distillation workflow. See [Current Status](#-current-status---beta) for details.
+**Key Features**: 
+- Teacher-student model distillation
+- PDF and code dataset processing
+- Hierarchical Q&A pair generation
+- LoRA-based fine-tuning
+- Self-study learning capabilities
+- Comprehensive evaluation framework
 
 ## Features
 
@@ -371,7 +384,7 @@ For more detailed information, see the following documentation:
 
 ## 🔧 Current Status - BETA
 
-This is a **BETA release** (v0.1.0-beta) with the following status:
+This is a **BETA release** (v1.0.0-beta) with the following status:
 
 ### ✅ What's Working
 - Web UI with real-time monitoring via WebSockets
@@ -386,13 +399,13 @@ This is a **BETA release** (v0.1.0-beta) with the following status:
 - Model evaluation (depends on trained models)
 
 ### 🚧 Known Limitations
-- Test suite is not yet implemented
-- Some error handling could be improved
-- Performance optimization needed for large datasets
-- Limited to specific model architectures (Llama 3, Phi-3)
-- Multiple script versions without clear documentation on which to use
-- No included model containers (must be set up separately)
-- Pipeline workflow documentation needs improvement
+See [BETA Release Notes](BETA_RELEASE_NOTES.md) for detailed list of limitations.
+
+### 📚 Documentation
+- [Model Setup Guide](MODEL_SETUP_GUIDE.md) - Instructions for setting up model containers
+- [Pipeline Workflow](PIPELINE_WORKFLOW.md) - Detailed explanation of the pipeline process
+- [Script Versions Guide](scripts/SCRIPT_VERSIONS_GUIDE.md) - Which script versions to use
+- [BETA Release Notes](BETA_RELEASE_NOTES.md) - Known issues and limitations
 
 ### 🤝 Help Wanted
 We're actively seeking contributors for:

@@ -187,11 +187,10 @@ This document analyzes the data flow between pipeline steps in the Model Distill
 
 From `pipeline_routes.py`, the expected flow is:
 1. `content_extraction_enrichment` → 
-2. `post_enrichment_pipeline_selector` → 
-3. `teacher_pair_generation` → 
-4. `distillation` → 
-5. `merge_model` → 
-6. `student_self_study` → 
-7. `evaluation`
+2. `teacher_pair_generation` → 
+3. `distillation` → 
+4. `merge_model` → 
+5. `student_self_study` → 
+6. `evaluation`
 
 Each step should produce output that exactly matches the input requirements of the next step.

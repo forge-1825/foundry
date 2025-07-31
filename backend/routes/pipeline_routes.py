@@ -124,26 +124,14 @@ SERVER_CONFIG = {
 # Pipeline configuration
 PIPELINE_CONFIG = {
     'steps': [
-        {
-            'id': 'post_enrichment_pipeline_selector',
-            'name': 'Pipeline Selector',
-            'description': 'Choose between Standard and PRD pipelines',
-            'script': 'run_post_enrichment_pipeline_selector.bat',
-            'next_step': 'teacher_pair_generation',
-            'previous_step': 'content_extraction_enrichment',
-            'parameters': {
-                'pipeline_type': 'standard',
-                'output_dir': 'Output',
-                'prd_phase': '1',
-                'prd_model_path': 'distilled_model_prd_phase3'
-            }
-        },
+        # Pipeline selector step removed - direct connection from enrichment to teacher pair generation
+        # This step was referencing a non-existent script and is not needed for BETA release
         {
             'id': 'content_extraction_enrichment',
             'name': 'Content Extraction & Enrichment',
             'description': 'Extract and enrich content from PDF files, websites, and code datasets',
             'script': 'run_data_enrichment.bat',
-            'next_step': 'post_enrichment_pipeline_selector',
+            'next_step': 'teacher_pair_generation',
             'previous_step': None,
             'parameters': {
                 'source_folder': '',
