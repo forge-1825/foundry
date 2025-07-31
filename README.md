@@ -108,6 +108,66 @@ To verify the infrastructure is working:
 
 For detailed setup instructions, see [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md)
 
+## Remote Deployment with GPU Acceleration
+
+For deploying the frontend/backend locally while using remote GPU resources for model inference:
+
+### Remote Server Setup (with GPU)
+
+Start the vLLM model containers on your remote GPU server:
+
+```bash
+# Teacher Model (port 8000)
+docker run -d --gpus all --name teacher_model -p 8000:8000 \
+  -v /home/headquarters/my_vllm_models/Phi-3-mini-4k-instruct-AWQ:/models/teacher \
+  -e TRUST_REMOTE_CODE=True \
+  -e CUDA_LAUNCH_BLOCKING=1 \
+  vllm/vllm-openai:latest \
+  --model /models/teacher \
+  --quantization awq_marlin \
+  --max-model-len 1024 \
+  --gpu-memory-utilization 0.5 \
+  --port 8000
+
+# Student Model (port 8001)
+docker run -d --gpus all --name student_model -p 8001:8001 \
+  -v /home/headquarters/my_vllm_models/Phi-3-mini-4k-instruct-AWQ:/models/student \
+  -e TRUST_REMOTE_CODE=True \
+  -e CUDA_LAUNCH_BLOCKING=1 \
+  vllm/vllm-openai:latest \
+  --model /models/student \
+  --quantization awq_marlin \
+  --gpu-memory-utilization 0.6 \
+  --max-model-len 1024 \
+  --port 8001
+
+# Distilled Model (port 8003)
+docker run -d --gpus all --name distilled_model -p 8003:8003 \
+  -v /home/headquarters/my_vllm_models/Phi-3-mini-4k-instruct-AWQ:/models/distilled \
+  -e TRUST_REMOTE_CODE=True \
+  -e CUDA_LAUNCH_BLOCKING=1 \
+  vllm/vllm-openai:latest \
+  --model /models/distilled \
+  --quantization awq_marlin \
+  --gpu-memory-utilization 0.6 \
+  --max-model-len 512 \
+  --port 8003
+```
+
+### Local Machine Setup
+
+1. **Setup SSH tunnel** to forward model ports and Docker socket:
+   ```bash
+   ssh -L 2375:localhost:2375 -L 8000:localhost:8000 -L 8001:localhost:8001 -L 8003:localhost:8003 user@remote-server-ip -N
+   ```
+
+2. **Start the application** using regular Docker Compose:
+   ```bash
+   docker-compose up -d
+   ```
+
+The application will now run locally while utilizing the remote GPU for model inference. This setup was tested with a 16GB RTX 4080 GPU.
+
 ### Development Setup
 
 #### VS Code Setup
