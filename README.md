@@ -72,8 +72,8 @@ Get up and running in under 5 minutes!
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/forge1825/model-distillation-pipeline.git
-   cd model-distillation-pipeline
+   git clone https://github.com/forge1825/foundry.git
+   cd foundry
    ```
 
 2. **Copy environment configuration**
