@@ -88,8 +88,27 @@ class VLLMClient:
             response = requests.post(url, headers=self.headers, json=data, timeout=60)
             response.raise_for_status()
             return response.json()
+        except requests.exceptions.ConnectionError as e:
+            logger.error(f"Cannot connect to model server at {self.base_url}")
+            logger.error("Please ensure:")
+            logger.error("1. Model containers are running (docker ps)")
+            logger.error("2. Ports are accessible (check firewall)")
+            logger.error("3. SSH tunnels are active (if using remote models)")
+            raise ConnectionError(f"Model server unavailable at {self.base_url}")
+        except requests.exceptions.Timeout:
+            logger.error("Request timed out - model may be overloaded or unresponsive")
+            raise TimeoutError("Model request timed out after 60 seconds")
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                logger.error(f"Model '{model}' not found on server")
+                logger.error("Use get_available_models() to see available models")
+            elif e.response.status_code == 401:
+                logger.error("Authentication failed - check API key")
+            else:
+                logger.error(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error querying model: {e}")
+            logger.error(f"Unexpected error querying model: {e}")
             raise
     
     def get_available_models(self) -> List[Dict[str, str]]:
@@ -105,6 +124,12 @@ class VLLMClient:
             response = requests.get(url, headers=self.headers, timeout=10)
             response.raise_for_status()
             return response.json().get("data", [])
+        except requests.exceptions.ConnectionError:
+            logger.warning(f"Cannot connect to {self.base_url} - server may not be running")
+            return []
+        except requests.exceptions.Timeout:
+            logger.warning(f"Timeout connecting to {self.base_url}")
+            return []
         except requests.exceptions.RequestException as e:
             logger.error(f"Error getting available models: {e}")
             return []
